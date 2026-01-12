@@ -106,7 +106,6 @@ const App: React.FC = () => {
 
   const handleHardReload = () => {
     setIsReloading(true);
-    // Borrar Service Worker antiguo
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {
         for(let registration of registrations) registration.unregister();
@@ -176,7 +175,7 @@ const App: React.FC = () => {
                     <p className="text-sm text-slate-600">Si no ves el botón:</p>
                     <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl">
                       <div className="bg-indigo-600 p-3 rounded-xl text-white"><Smartphone size={20} /></div>
-                      <p className="text-sm font-bold text-slate-700">Menú (⋮) -> "Instalar aplicación".</p>
+                      <p className="text-sm font-bold text-slate-700">Menú (⋮) &rarr; "Instalar aplicación".</p>
                     </div>
                   </div>
                 )}
@@ -197,7 +196,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">SISTEMA REPARADO v2.2</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">SISTEMA REPARADO v2.3</p>
               </div>
             </div>
           </div>
