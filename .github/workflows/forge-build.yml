@@ -1,5 +1,5 @@
-# APK FORGE V2.7 - WHITE-SCREEN SHIELD ACTIVE
-name: APK Forge Elite (Anti-White Screen)
+# APK FORGE V2.8 - DELIMITER FIX ACTIVE
+name: APK Forge Elite (V2.8 Robust Build)
 on:
   workflow_dispatch:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    name: Forjar Binario APK (V2.7 Helix Shield)
+    name: Forjar Binario APK (V2.8 Master)
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Clonando Repositorio
@@ -24,41 +24,41 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🧪 Preparando Directorio Web (Anti-White Screen)
+      - name: 🧪 Preparando Directorio Web (V2.8 Fix)
         run: |
-          echo "Limpiando y preparando archivos..."
+          echo "Limpiando y preparando archivos para WebView..."
           mkdir -p public_build
-          # Copiar todo EXCEPTO carpetas del sistema
-          rsync -av --exclude='android' --exclude='.git' --exclude='node_modules' --exclude='public_build' . public_build/
           
-          echo "Corrigiendo rutas para WebView..."
-          # Este comando cambia rutas como href="/css/style.css" a href="css/style.css"
-          find public_build -name "*.html" -exec sed -i 's/href="//href="/g' {} +
-          find public_build -name "*.html" -exec sed -i 's/src="//src="/g' {} +
+          # Copiamos solo archivos web esenciales
+          # Evitamos copiar el propio workflow o carpetas de desarrollo para evitar bucles
+          rsync -av --exclude='android' --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='public_build' . public_build/
           
-          # Verificar que index.html existe
+          echo "Corrigiendo rutas para compatibilidad Android (Usando Delimitador Pipe)..."
+          # Usamos | como delimitador para evitar el error 'unknown option to s'
+          find public_build -name "*.html" -exec sed -i 's|href="/|href="|g' {} +
+          find public_build -name "*.html" -exec sed -i 's|src="/|src="|g' {} +
+          
+          # Verificación final de integridad
           if [ ! -f public_build/index.html ]; then
-            echo "ERROR: index.html no encontrado en la raíz!"
+            echo "❌ ERROR FATAL: index.html no encontrado en la raíz del proyecto."
             exit 1
           fi
-          echo "WEB_DIR=public_build" >> $GITHUB_ENV
+          echo "✅ Directorio public_build listo."
 
-      - name: 🧹 Limpieza de Entorno
+      - name: 🏗️ Inicializando Capacitor V2.8
         run: |
-          rm -rf android node_modules
+          # Generar un package.json mínimo si no existe
           if [ ! -f package.json ]; then
-            echo '{"name":"barcode-app","scripts":{"build":"echo ok"}}' > package.json
+            echo '{"name":"barcode-app","version":"1.0.0","scripts":{"build":"echo ok"}}' > package.json
           fi
-
-      - name: 🏗️ Inicializando Capacitor V2.7
-        run: |
+          
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Lector de Barras PRO" "com.zerklucio.barcode.v27" --web-dir ${{ env.WEB_ENV || 'public_build' }}
+          npx cap init "CODIGOS-DE-BARRAS" "com.zerklucio.barcode.v28" --web-dir public_build
           npx cap add android
 
-      - name: 🛡️ Parche Helix Shield (Kotlin Conflict Fix)
+      - name: 🛡️ Parche Helix Shield (Kotlin 1.8.22)
         run: |
-          echo "Aplicando resolución de conflictos de Kotlin v1.8.22..."
+          echo "Aplicando resolución de conflictos de Kotlin..."
           echo "
           subprojects {
               configurations.all {
@@ -71,22 +71,20 @@ jobs:
           }" >> android/build.gradle
           sed -i '/dependencies {/a     implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")' android/app/build.gradle
 
-      - name: 🌐 Configuración de Red y Cámara
+      - name: 🌐 Configuración de Permisos y Sincronización
         run: |
-          # Permitir tráfico HTTP (cleartext) por si acaso
+          # Permitir tráfico HTTP y asegurar permisos de cámara
           sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
           npx cap sync android
 
       - name: 🛠️ Construyendo APK Final
-        env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m"
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Entrega de APK V2.7
+      - name: 📦 Entrega de APK V2.8
         uses: actions/upload-artifact@v4
         with:
-          name: Lector-de-Barras-PRO-V27-Fixed
+          name: CODIGOS-DE-BARRAS-V28-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
