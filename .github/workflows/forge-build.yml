@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: 🛠️ Preparando Entorno Node.js
         uses: actions/setup-node@v4
@@ -25,28 +25,31 @@ jobs:
 
       - name: 🛡️ Escudo Anti-Errores (Auto-Config)
         run: |
-          echo "Iniciando análisis de estructura..."
           if [ ! -f package.json ]; then
-            echo '{"name":"auto-gen-app","scripts":{"build":"mkdir -p dist && echo "<h1>App Generada Correctamente</h2>" > dist/index.html"}}' > package.json
+            echo '{"name":"auto-app","scripts":{"build":"mkdir -p dist && echo "<h1>App</h2>" > dist/index.html"}}' > package.json
           fi
           mkdir -p dist
           if [ ! -f dist/index.html ]; then
-            echo "<html><body style='background:#0f172a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>BarCode</h1><p>Construida con APK Forge Elite</p></body></html>" > dist/index.html
+            echo "<html><body style='background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh'><h1>BarCode</h1></body></html>" > dist/index.html
           fi
 
-      - name: 🏗️ Instalando Motores de Aplicación
+      - name: 🏗️ Instalando Motores (Capacitor)
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "BarCode" "com.forge.elite.app" --web-dir dist || true
           npx cap add android || true
 
-      - name: 🚀 Construyendo APK (Gradle)
+      - name: 🚀 Sincronización y Permisos
         run: |
-          npx cap copy android
+          npx cap sync android
+          chmod +x android/gradlew
+
+      - name: 🛠️ Construyendo APK (Gradle)
+        run: |
           cd android && ./gradlew assembleDebug
 
       - name: 📦 Entrega de Artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: BarCode-Debug-APK
+          name: BarCode-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
