@@ -1,0 +1,54 @@
+# Dependencias
+node_modules/
+jspm_packages/
+.npm/
+
+# Carpetas de Compilación Web
+dist/
+build/
+out/
+.next/
+.vuepress/dist/
+
+# Binarios y carpetas de empaquetado (LO QUE BLOQUEA GITHUB)
+*-win32-x64/
+*-linux-x64/
+*-darwin-x64/
+*-win32-ia32/
+*-linux-arm64/
+*-linux-armv7l/
+*-mac-x64/
+*-mac-arm64/
+release/
+package/
+*.exe
+*.zip
+*.dmg
+*.deb
+*.rpm
+*.bin
+*.app
+*.asar
+*.msi
+
+# Archivos de Sistema y Temporales
+.DS_Store
+Thumbs.db
+*.log
+.eslintcache
+.cache/
+
+# Configuración Local / Privada
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Herramientas de Desarrollo
+.vscode/
+.idea/
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace

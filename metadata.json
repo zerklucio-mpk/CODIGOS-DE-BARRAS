@@ -1,0 +1,19 @@
+
+{
+  "name": "CV Directo Barcode",
+  "short_name": "CV Barcode",
+  "description": "Sistema de generación de códigos de barras EAN-13 de alta fidelidad para Android y Desktop.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1152/1152912.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "requestFramePermissions": []
+}
