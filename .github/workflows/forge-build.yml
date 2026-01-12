@@ -1,5 +1,5 @@
-# APK FORGE V2.8 - DELIMITER FIX ACTIVE
-name: APK Forge Elite (V2.8 Robust Build)
+# APK FORGE V3.0 - OMNI-BUILD ENGINE
+name: APK Forge V3 (Anti-White Screen)
 on:
   workflow_dispatch:
   push:
@@ -7,84 +7,67 @@ on:
 
 jobs:
   build-android:
-    name: Forjar Binario APK (V2.8 Master)
+    name: Compilar y Forjar APK
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Clonando Repositorio
+      - name: 📥 Clonando Código Fuente
         uses: actions/checkout@v4
 
-      - name: ☕ Configurando Java (JDK 21 Microsoft)
+      - name: ☕ Setup Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: 🛠️ Preparando Entorno Node.js
+      - name: 🟢 Setup Node.js (Build Engine)
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: 🧪 Preparando Directorio Web (V2.8 Fix)
+      - name: 📦 Instalación de Dependencias
         run: |
-          echo "Limpiando y preparando archivos para WebView..."
-          mkdir -p public_build
-          
-          # Copiamos solo archivos web esenciales
-          # Evitamos copiar el propio workflow o carpetas de desarrollo para evitar bucles
-          rsync -av --exclude='android' --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='public_build' . public_build/
-          
-          echo "Corrigiendo rutas para compatibilidad Android (Usando Delimitador Pipe)..."
-          # Usamos | como delimitador para evitar el error 'unknown option to s'
-          find public_build -name "*.html" -exec sed -i 's|href="/|href="|g' {} +
-          find public_build -name "*.html" -exec sed -i 's|src="/|src="|g' {} +
-          
-          # Verificación final de integridad
-          if [ ! -f public_build/index.html ]; then
-            echo "❌ ERROR FATAL: index.html no encontrado en la raíz del proyecto."
-            exit 1
-          fi
-          echo "✅ Directorio public_build listo."
-
-      - name: 🏗️ Inicializando Capacitor V2.8
-        run: |
-          # Generar un package.json mínimo si no existe
-          if [ ! -f package.json ]; then
-            echo '{"name":"barcode-app","version":"1.0.0","scripts":{"build":"echo ok"}}' > package.json
-          fi
-          
+          npm install --legacy-peer-deps
+          # Instalamos Capacitor globalmente para la sesión
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "CODIGOS-DE-BARRAS" "com.zerklucio.barcode.v28" --web-dir public_build
+
+      - name: 🚀 Compilando Proyecto (Vite/React)
+        run: |
+          # Intentar compilar el proyecto para generar la carpeta 'dist'
+          if npm run build; then
+            echo "BUILD_DIR=dist" >> $GITHUB_ENV
+          else
+            # Si falla o no tiene build, usamos la raíz (para sitios estáticos)
+            echo "BUILD_DIR=." >> $GITHUB_ENV
+          fi
+
+      - name: 🛠️ Inicializando Entorno Android
+        run: |
+          # Inicializar Capacitor apuntando a la carpeta compilada
+          npx cap init "Lector Barcode Pro" "com.zerklucio.barcode.v3" --web-dir ${{ env.BUILD_DIR }}
           npx cap add android
 
-      - name: 🛡️ Parche Helix Shield (Kotlin 1.8.22)
+      - name: 🛡️ Parche Helix (Kotlin & Camera Permissions)
         run: |
-          echo "Aplicando resolución de conflictos de Kotlin..."
-          echo "
-          subprojects {
-              configurations.all {
-                  resolutionStrategy.eachDependency { details ->
-                      if (details.requested.group == 'org.jetbrains.kotlin') {
-                          details.useVersion '1.8.22'
-                      }
-                  }
-              }
-          }" >> android/build.gradle
-          sed -i '/dependencies {/a     implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")' android/app/build.gradle
-
-      - name: 🌐 Configuración de Permisos y Sincronización
-        run: |
-          # Permitir tráfico HTTP y asegurar permisos de cámara
+          # Corregir conflictos de Kotlin
+          echo "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }" >> android/build.gradle
+          
+          # Inyectar permisos de CÁMARA y LINTERNA (Esenciales para códigos de barras)
+          sed -i '/</manifest>/i     <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/</manifest>/i     <uses-permission android:name="android.permission.FLASHLIGHT" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
-          npx cap sync android
 
-      - name: 🛠️ Construyendo APK Final
+      - name: 🔄 Sincronizando Activos Web
+        run: npx cap sync android
+
+      - name: 🏗️ Construyendo Binario APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Entrega de APK V2.8
+      - name: 📦 Entrega Final
         uses: actions/upload-artifact@v4
         with:
-          name: CODIGOS-DE-BARRAS-V28-Fixed
+          name: Lector-Barcode-Pro-V3-Functional
           path: android/app/build/outputs/apk/debug/app-debug.apk
