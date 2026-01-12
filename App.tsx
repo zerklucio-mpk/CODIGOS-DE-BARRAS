@@ -4,7 +4,6 @@ import {
   Download, 
   CheckCircle2,
   RefreshCw,
-  RotateCw,
   Loader2,
   ShieldCheck,
   PlusCircle,
@@ -26,7 +25,7 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallHelp, setShowInstallHelp] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
-  const [appVersion] = useState<string>(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  const [appVersion] = useState<string>("2.5.1");
 
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -107,27 +106,36 @@ const App: React.FC = () => {
 
   const handleDeepReset = async () => {
     setIsReloading(true);
-    
-    // 1. Unregister all service workers
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const reg of registrations) {
-        await reg.unregister();
+    try {
+      // 1. Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
       }
-    }
 
-    // 2. Clear all caches
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      for (const key of keys) {
-        await caches.delete(key);
+      // 2. Clear all caches
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
       }
-    }
 
-    // 3. Force reload ignoring cache
-    setTimeout(() => {
-      window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
-    }, 1000);
+      // 3. Clear storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 4. Force reload con cache-buster para engañar al navegador
+      setTimeout(() => {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.location.href = `${cleanUrl}?v=${Date.now()}`;
+      }, 1200);
+    } catch (err) {
+      console.error("Error during reset:", err);
+      window.location.reload();
+    }
   };
 
   const downloadBarcode = () => {
@@ -209,7 +217,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">VERSIÓN ESTABLE v2.4</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">VERSIÓN {appVersion}</p>
               </div>
             </div>
           </div>
@@ -224,8 +232,14 @@ const App: React.FC = () => {
                 <HelpCircle size={12} /> Ayuda
               </button>
             )}
-            <button onClick={handleDeepReset} disabled={isReloading} className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
-              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} {isReloading ? 'REPARANDO...' : 'REPARAR 404'}
+            <button 
+              onClick={handleDeepReset} 
+              disabled={isReloading} 
+              className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-100'}`}
+              title="Borra caché y soluciona errores 404"
+            >
+              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} 
+              {isReloading ? 'REPARANDO...' : 'REPARAR 404'}
             </button>
           </div>
         </div>
