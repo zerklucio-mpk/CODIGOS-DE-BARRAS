@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallHelp, setShowInstallHelp] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
-  const [appVersion] = useState<string>("2.7.1");
+  const [appVersion] = useState<string>("2.7.2");
 
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -125,9 +125,9 @@ const App: React.FC = () => {
       sessionStorage.clear();
 
       setTimeout(() => {
-        // Forma segura de recargar ignorando errores de origen
-        const currentUrl = window.location.href.split('?')[0];
-        window.location.href = `${currentUrl}?reload=${Date.now()}`;
+        // Recarga limpia asegurando que usemos el origen correcto
+        const currentUrl = window.location.origin + window.location.pathname;
+        window.location.href = `${currentUrl}?reset_origin=${Date.now()}`;
       }, 1000);
     } catch (err) {
       window.location.reload();
@@ -213,7 +213,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">ULTRA V{appVersion}</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">ORIGIN V{appVersion}</p>
               </div>
             </div>
           </div>
@@ -232,7 +232,7 @@ const App: React.FC = () => {
               onClick={handleDeepReset} 
               disabled={isReloading} 
               className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-200'}`}
-              title="Borra caché y soluciona errores"
+              title="Borra caché y soluciona errores de origen"
             >
               {isReloading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} 
               {isReloading ? 'REPARANDO...' : 'REPARAR 404'}
@@ -249,7 +249,7 @@ const App: React.FC = () => {
               <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Servicio de Logística</h2>
             </div>
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-lg border border-slate-100">
-              SMOOTH BUILD
+              SAFE BUILD
             </div>
           </div>
 
