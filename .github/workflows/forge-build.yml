@@ -1,5 +1,5 @@
-# APK FORGE V2.6 - OPTIMIZADO PARA: https://github.com/zerklucio-mpk/CODIGOS-DE-BARRAS
-name: APK Forge Elite (Barcode Edition)
+# APK FORGE V2.7 - WHITE-SCREEN SHIELD ACTIVE
+name: APK Forge Elite (Anti-White Screen)
 on:
   workflow_dispatch:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    name: Forjar Binario APK (Helix Shield V2.6)
+    name: Forjar Binario APK (V2.7 Helix Shield)
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Clonando Repositorio
@@ -24,28 +24,39 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🧪 Configurando Directorio Web
+      - name: 🧪 Preparando Directorio Web (Anti-White Screen)
         run: |
-          echo "Buscando archivos fuente..."
-          # Para proyectos como CODIGOS-DE-BARRAS, los archivos suelen estar en la raíz
-          mkdir -p dist
-          cp -r * dist/ 2>/dev/null || true
-          echo "WEB_DIR=dist" >> $GITHUB_ENV
+          echo "Limpiando y preparando archivos..."
+          mkdir -p public_build
+          # Copiar todo EXCEPTO carpetas del sistema
+          rsync -av --exclude='android' --exclude='.git' --exclude='node_modules' --exclude='public_build' . public_build/
+          
+          echo "Corrigiendo rutas para WebView..."
+          # Este comando cambia rutas como href="/css/style.css" a href="css/style.css"
+          find public_build -name "*.html" -exec sed -i 's/href="//href="/g' {} +
+          find public_build -name "*.html" -exec sed -i 's/src="//src="/g' {} +
+          
+          # Verificar que index.html existe
+          if [ ! -f public_build/index.html ]; then
+            echo "ERROR: index.html no encontrado en la raíz!"
+            exit 1
+          fi
+          echo "WEB_DIR=public_build" >> $GITHUB_ENV
 
-      - name: 🧹 Limpieza y Preparación
+      - name: 🧹 Limpieza de Entorno
         run: |
           rm -rf android node_modules
           if [ ! -f package.json ]; then
-            echo '{"name":"lector-de-barras-pro-app","scripts":{"build":"echo ok"}}' > package.json
+            echo '{"name":"barcode-app","scripts":{"build":"echo ok"}}' > package.json
           fi
 
-      - name: 🏗️ Inicializando Capacitor con Helix Shield
+      - name: 🏗️ Inicializando Capacitor V2.7
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Lector de Barras PRO" "com.zerklucio.barcode.app" --web-dir ${{ env.WEB_DIR }}
+          npx cap init "Lector de Barras PRO" "com.zerklucio.barcode.v27" --web-dir ${{ env.WEB_ENV || 'public_build' }}
           npx cap add android
 
-      - name: 🧪 Parche Helix Shield (Fix Clases Duplicadas Kotlin)
+      - name: 🛡️ Parche Helix Shield (Kotlin Conflict Fix)
         run: |
           echo "Aplicando resolución de conflictos de Kotlin v1.8.22..."
           echo "
@@ -58,25 +69,24 @@ jobs:
                   }
               }
           }" >> android/build.gradle
-          
-          # Inyectar BOM de Kotlin para estabilizar dependencias
           sed -i '/dependencies {/a     implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")' android/app/build.gradle
 
-      - name: 🚀 Sincronización y Permisos
+      - name: 🌐 Configuración de Red y Cámara
         run: |
+          # Permitir tráfico HTTP (cleartext) por si acaso
+          sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
           npx cap sync android
-          # Asegurar que los scripts de Gradle sean ejecutables
-          chmod +x android/gradlew
 
       - name: 🛠️ Construyendo APK Final
         env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
+          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m"
         run: |
           cd android
+          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Entrega de APK (CODIGOS-DE-BARRAS)
+      - name: 📦 Entrega de APK V2.7
         uses: actions/upload-artifact@v4
         with:
-          name: Lector-de-Barras-PRO-Final-V26
+          name: Lector-de-Barras-PRO-V27-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
