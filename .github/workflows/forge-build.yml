@@ -1,5 +1,5 @@
-# APK FORGE V3.1 - PATH FINDER EDITION
-name: APK Forge V3.1 (Final Fix)
+# APK FORGE V3.2 - TITANIUM STABILITY FIX
+name: APK Forge V3.2 (Syntax Fix)
 on:
   workflow_dispatch:
   push:
@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-android:
-    name: Compilación de Alto Rendimiento
+    name: Build Production APK
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Clonando Código
+      - name: 📥 Checkout Source
         uses: actions/checkout@v4
 
       - name: ☕ Setup Java 21
@@ -25,60 +25,62 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: 📦 Instalación de Dependencias
+      - name: 📦 Install Dependencies
         run: |
           npm install --legacy-peer-deps
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: 🚀 Compilando Proyecto
+      - name: 🚀 Project Build (Compiling React/Vite)
         run: |
-          # Ejecutar build de producción
-          npm run build || echo "No build script found, skipping compile"
+          # Try to build, if it fails we assume static site
+          npm run build || echo "No build script found"
           
-          # Detección inteligente de carpeta de salida
+          # Intelligent directory detection
           if [ -d "dist" ]; then
             echo "BUILD_DIR=dist" >> $GITHUB_ENV
+            echo "Found dist/ directory"
           elif [ -d "build" ]; then
             echo "BUILD_DIR=build" >> $GITHUB_ENV
+            echo "Found build/ directory"
           else
             echo "BUILD_DIR=." >> $GITHUB_ENV
+            echo "Using root as web-dir"
           fi
 
-      - name: 🛠️ Reparación de Rutas (Anti-White Screen)
+      - name: 🛠️ Path Repair (Anti-White Screen)
         run: |
-          echo "Corrigiendo rutas en la carpeta: ${{ env.BUILD_DIR }}"
-          # Convertir todas las rutas absolutas en relativas para que WebView las entienda
+          # Fix absolute paths to relative paths to prevent White Screen on Android WebView
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
-          # Fix específico para archivos JS compilados de Vite/Webpack
           find ${{ env.BUILD_DIR }} -name "*.js" -exec sed -i 's|"/assets/|"./assets/|g' {} +
 
-      - name: 📱 Inicializando Capacitor
+      - name: 📱 Capacitor Initialization
         run: |
-          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v31" --web-dir ${{ env.env.BUILD_DIR }}
+          # Syntax Fix: removed extra 'env.' and corrected variable reference
+          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v32" --web-dir ${{ env.BUILD_DIR }}
           npx cap add android
 
-      - name: 🛡️ Inyección de Permisos de Hardware
+      - name: 🛡️ Hardware Permission Injection
         run: |
-          # Parche de Kotlin para evitar errores de gradle
+          # Patch Kotlin version to ensure Gradle stability
           echo "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }" >> android/build.gradle
           
-          # Permisos críticos de cámara y visualización
+          # Inject Camera and Flashlight permissions for barcode scanning
           sed -i '/</manifest>/i     <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
           sed -i '/</manifest>/i     <uses-permission android:name="android.permission.FLASHLIGHT" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
 
-      - name: 🔄 Sincronización Final
+      - name: 🔄 Sync Assets
         run: npx cap sync android
 
-      - name: 🏗️ Construyendo APK Final
+      - name: 🏗️ Build APK Binary
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Entrega V3.1
+      - name: 📦 Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Barcode-Master-Pro-V31-Working
+          name: Barcode-Master-Pro-V32-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
