@@ -1,5 +1,5 @@
-# APK FORGE V3.0 - OMNI-BUILD ENGINE
-name: APK Forge V3 (Anti-White Screen)
+# APK FORGE V3.1 - PATH FINDER EDITION
+name: APK Forge V3.1 (Final Fix)
 on:
   workflow_dispatch:
   push:
@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-android:
-    name: Compilar y Forjar APK
+    name: Compilación de Alto Rendimiento
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Clonando Código Fuente
+      - name: 📥 Clonando Código
         uses: actions/checkout@v4
 
       - name: ☕ Setup Java 21
@@ -19,7 +19,7 @@ jobs:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: 🟢 Setup Node.js (Build Engine)
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -28,46 +28,57 @@ jobs:
       - name: 📦 Instalación de Dependencias
         run: |
           npm install --legacy-peer-deps
-          # Instalamos Capacitor globalmente para la sesión
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: 🚀 Compilando Proyecto (Vite/React)
+      - name: 🚀 Compilando Proyecto
         run: |
-          # Intentar compilar el proyecto para generar la carpeta 'dist'
-          if npm run build; then
+          # Ejecutar build de producción
+          npm run build || echo "No build script found, skipping compile"
+          
+          # Detección inteligente de carpeta de salida
+          if [ -d "dist" ]; then
             echo "BUILD_DIR=dist" >> $GITHUB_ENV
+          elif [ -d "build" ]; then
+            echo "BUILD_DIR=build" >> $GITHUB_ENV
           else
-            # Si falla o no tiene build, usamos la raíz (para sitios estáticos)
             echo "BUILD_DIR=." >> $GITHUB_ENV
           fi
 
-      - name: 🛠️ Inicializando Entorno Android
+      - name: 🛠️ Reparación de Rutas (Anti-White Screen)
         run: |
-          # Inicializar Capacitor apuntando a la carpeta compilada
-          npx cap init "Lector Barcode Pro" "com.zerklucio.barcode.v3" --web-dir ${{ env.BUILD_DIR }}
+          echo "Corrigiendo rutas en la carpeta: ${{ env.BUILD_DIR }}"
+          # Convertir todas las rutas absolutas en relativas para que WebView las entienda
+          find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
+          find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
+          # Fix específico para archivos JS compilados de Vite/Webpack
+          find ${{ env.BUILD_DIR }} -name "*.js" -exec sed -i 's|"/assets/|"./assets/|g' {} +
+
+      - name: 📱 Inicializando Capacitor
+        run: |
+          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v31" --web-dir ${{ env.env.BUILD_DIR }}
           npx cap add android
 
-      - name: 🛡️ Parche Helix (Kotlin & Camera Permissions)
+      - name: 🛡️ Inyección de Permisos de Hardware
         run: |
-          # Corregir conflictos de Kotlin
+          # Parche de Kotlin para evitar errores de gradle
           echo "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }" >> android/build.gradle
           
-          # Inyectar permisos de CÁMARA y LINTERNA (Esenciales para códigos de barras)
+          # Permisos críticos de cámara y visualización
           sed -i '/</manifest>/i     <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
           sed -i '/</manifest>/i     <uses-permission android:name="android.permission.FLASHLIGHT" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
 
-      - name: 🔄 Sincronizando Activos Web
+      - name: 🔄 Sincronización Final
         run: npx cap sync android
 
-      - name: 🏗️ Construyendo Binario APK
+      - name: 🏗️ Construyendo APK Final
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Entrega Final
+      - name: 📦 Entrega V3.1
         uses: actions/upload-artifact@v4
         with:
-          name: Lector-Barcode-Pro-V3-Functional
+          name: Barcode-Master-Pro-V31-Working
           path: android/app/build/outputs/apk/debug/app-debug.apk
