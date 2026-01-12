@@ -6,55 +6,60 @@ on:
 
 jobs:
   build-android:
-    name: Forjar Binario APK (V2.4 Cache-Bypass)
+    name: Forjar Binario APK (V2.5 Ironclad)
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Clonando Repositorio
         uses: actions/checkout@v4
 
-      - name: ☕ Configurando Java (JDK 21)
+      - name: ☕ Configurando Java (JDK 21 Microsoft)
         uses: actions/setup-java@v4
         with:
           java-version: '21'
-          distribution: 'temurin'
-          # Eliminamos 'cache: gradle' porque los archivos no existen al inicio
+          distribution: 'microsoft'
 
       - name: 🛠️ Preparando Entorno Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # Eliminamos 'cache: npm' para evitar errores de búsqueda de archivos
 
-      - name: 🧹 Limpieza y Preparación
+      - name: 🧹 Limpieza y Preparación de Directorios
         run: |
-          echo "Borrando rastro de compilaciones anteriores..."
-          rm -rf android
-          if [ ! -f package.json ]; then
-            echo '{"name":"auto-app","scripts":{"build":"mkdir -p dist && echo "<h1>App</h2>" > dist/index.html"}}' > package.json
-          fi
+          echo "Limpiando entorno para construcción pura..."
+          rm -rf android node_modules
           mkdir -p dist
-          if [ ! -f dist/index.html ]; then
-            echo "<html><body style='background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>BarCode</h1><p>V2.4 Bypass System</p></body></html>" > dist/index.html
+          # Aseguramos que el directorio web no esté vacío (Capacitor lo requiere)
+          echo "<html><body style='background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>Mi App Android</h1><p>Build V2.5 Ironclad Success</p></body></html>" > dist/index.html
+          if [ ! -f package.json ]; then
+            echo '{"name":"auto-app","scripts":{"build":"echo ok"}}' > package.json
           fi
 
-      - name: 🏗️ Instalando Motores (Capacitor)
+      - name: 🏗️ Instalando Motores e Inicializando Android
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "BarCode" "com.forge.elite.app" --web-dir dist || true
-          npx cap add android || true
+          npx cap init "Mi App Android" "com.forge.elite.app" --web-dir dist
+          npx cap add android
 
-      - name: 🚀 Sincronización y Permisos
+      - name: 🚀 Sincronización y Permisos Críticos
         run: |
           npx cap sync android
-          chmod +x android/gradlew
+          if [ -d "android" ]; then
+            chmod +x android/gradlew
+            echo "Estructura de Android verificada con éxito."
+          else
+            echo "Error: La carpeta 'android' no se generó."
+            exit 1
+          fi
 
-      - name: 🛠️ Construyendo APK
+      - name: 🛠️ Construyendo APK (High Memory Mode)
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: 📦 Entrega de Artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: BarCode-APK-V24
+          name: Mi-App-Android-APK-V25
           path: android/app/build/outputs/apk/debug/app-debug.apk
