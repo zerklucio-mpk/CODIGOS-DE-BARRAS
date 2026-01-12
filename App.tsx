@@ -1,16 +1,13 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Barcode, 
   Download, 
   CheckCircle2,
-  Layout,
   RefreshCw,
-  XCircle,
-  Hash,
   RotateCw,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  PlusCircle
 } from 'lucide-react';
 import { BarcodeDisplay } from './components/BarcodeDisplay';
 
@@ -21,7 +18,27 @@ const App: React.FC = () => {
   const [label, setLabel] = useState<string>('Producto Industrial');
   const [isAutoFixing, setIsAutoFixing] = useState<boolean>(true);
   const [isReloading, setIsReloading] = useState<boolean>(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [appVersion] = useState<string>(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+  // Escuchar el evento de instalación de PWA
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   useEffect(() => {
     let val = inputValue.replace(/\D/g, '');
@@ -132,18 +149,30 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <button 
-            onClick={handleHardReload}
-            disabled={isReloading}
-            className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${
-              isReloading 
-              ? 'bg-slate-100 text-slate-400 border-slate-200' 
-              : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-600 hover:text-white'
-            }`}
-          >
-            {isReloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
-            {isReloading ? 'Sincronizando...' : 'Actualizar App'}
-          </button>
+          
+          <div className="flex items-center gap-2">
+            {deferredPrompt && (
+              <button 
+                onClick={handleInstallClick}
+                className="px-4 py-2 bg-green-500 text-white rounded-xl flex items-center gap-2 font-black text-[9px] uppercase tracking-wider animate-bounce shadow-lg shadow-green-100"
+              >
+                <PlusCircle size={12} />
+                Instalar App
+              </button>
+            )}
+            <button 
+              onClick={handleHardReload}
+              disabled={isReloading}
+              className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${
+                isReloading 
+                ? 'bg-slate-100 text-slate-400 border-slate-200' 
+                : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-600 hover:text-white'
+              }`}
+            >
+              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
+              {isReloading ? 'Sincronizando...' : 'Actualizar App'}
+            </button>
+          </div>
         </div>
       </header>
 
