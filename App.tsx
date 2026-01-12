@@ -7,7 +7,11 @@ import {
   RotateCw,
   Loader2,
   ShieldCheck,
-  PlusCircle
+  PlusCircle,
+  HelpCircle,
+  X,
+  Share,
+  Smartphone
 } from 'lucide-react';
 import { BarcodeDisplay } from './components/BarcodeDisplay';
 
@@ -19,10 +23,14 @@ const App: React.FC = () => {
   const [isAutoFixing, setIsAutoFixing] = useState<boolean>(true);
   const [isReloading, setIsReloading] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallHelp, setShowInstallHelp] = useState<boolean>(false);
+  const [isIOS, setIsIOS] = useState<boolean>(false);
   const [appVersion] = useState<string>(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
-  // Escuchar el evento de instalación de PWA
   useEffect(() => {
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(isIOSDevice);
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -98,6 +106,12 @@ const App: React.FC = () => {
 
   const handleHardReload = () => {
     setIsReloading(true);
+    // Borrar Service Worker antiguo
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for(let registration of registrations) registration.unregister();
+      });
+    }
     setTimeout(() => {
       const currentUrl = window.location.href.split('?')[0];
       window.location.href = `${currentUrl}?t=${Date.now()}`;
@@ -135,6 +149,44 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center py-6 px-4 font-sans text-slate-900 select-none">
+      {showInstallHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-black uppercase text-sm tracking-widest text-slate-400">Instrucciones de Instalación</h3>
+                <button onClick={() => setShowInstallHelp(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+              <div className="space-y-6">
+                {isIOS ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl">
+                      <div className="bg-indigo-600 p-3 rounded-xl text-white"><Share size={20} /></div>
+                      <p className="text-sm font-bold text-slate-700">1. Toca "Compartir" en Safari.</p>
+                    </div>
+                    <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl">
+                      <div className="bg-indigo-600 p-3 rounded-xl text-white"><PlusCircle size={20} /></div>
+                      <p className="text-sm font-bold text-slate-700">2. Selecciona "Agregar a inicio".</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-slate-600">Si no ves el botón:</p>
+                    <div className="flex items-center gap-4 p-4 bg-indigo-50 rounded-2xl">
+                      <div className="bg-indigo-600 p-3 rounded-xl text-white"><Smartphone size={20} /></div>
+                      <p className="text-sm font-bold text-slate-700">Menú (⋮) -> "Instalar aplicación".</p>
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => setShowInstallHelp(false)} className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl uppercase text-[10px] tracking-[0.2em]">Entendido</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="max-w-2xl w-full mb-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-5 rounded-[2rem] shadow-lg border border-slate-200/60">
           <div className="flex items-center gap-4">
@@ -145,32 +197,23 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">SISTEMA VERIFICADO v2.0</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">SISTEMA REPARADO v2.2</p>
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {deferredPrompt && (
-              <button 
-                onClick={handleInstallClick}
-                className="px-4 py-2 bg-green-500 text-white rounded-xl flex items-center gap-2 font-black text-[9px] uppercase tracking-wider animate-bounce shadow-lg shadow-green-100"
-              >
-                <PlusCircle size={12} />
-                Instalar App
+            {deferredPrompt ? (
+              <button onClick={handleInstallClick} className="px-4 py-2 bg-green-500 text-white rounded-xl flex items-center gap-2 font-black text-[9px] uppercase tracking-wider animate-bounce shadow-lg shadow-green-100">
+                <PlusCircle size={12} /> Instalar
+              </button>
+            ) : (
+              <button onClick={() => setShowInstallHelp(true)} className="px-4 py-2 bg-white text-slate-400 border border-slate-100 rounded-xl flex items-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-slate-50">
+                <HelpCircle size={12} /> Ayuda
               </button>
             )}
-            <button 
-              onClick={handleHardReload}
-              disabled={isReloading}
-              className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${
-                isReloading 
-                ? 'bg-slate-100 text-slate-400 border-slate-200' 
-                : 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-600 hover:text-white'
-              }`}
-            >
-              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
-              {isReloading ? 'Sincronizando...' : 'Actualizar App'}
+            <button onClick={handleHardReload} disabled={isReloading} className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-indigo-50 text-indigo-700 border-indigo-100'}`}>
+              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />} {isReloading ? '...' : 'Reparar'}
             </button>
           </div>
         </div>
@@ -181,7 +224,7 @@ const App: React.FC = () => {
           <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Generador Activo</h2>
+              <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Servidor Offline Activo</h2>
             </div>
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-lg border border-slate-100">
               BUILD {appVersion}
@@ -191,39 +234,24 @@ const App: React.FC = () => {
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estándar de Dígitos</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Dígitos</label>
                 <div className="flex p-1 bg-slate-100 rounded-xl gap-1">
                   {[10, 11, 12, 13].map((len) => (
-                    <button 
-                      key={len}
-                      onClick={() => setTargetLength(len)}
-                      className={`flex-1 py-2.5 rounded-lg font-black text-[11px] transition-all duration-200 ${targetLength === len ? 'bg-white shadow-sm text-indigo-600' : 'bg-transparent text-slate-500 hover:text-slate-800'}`}
-                    >
-                      {len}
-                    </button>
+                    <button key={len} onClick={() => setTargetLength(len)} className={`flex-1 py-2.5 rounded-lg font-black text-[11px] transition-all ${targetLength === len ? 'bg-white shadow-sm text-indigo-600' : 'bg-transparent text-slate-500'}`}>{len}</button>
                   ))}
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de Etiqueta</label>
-                <input 
-                  type="text" 
-                  value={label} 
-                  onChange={(e) => setLabel(e.target.value)}
-                  className="w-full h-12 px-5 bg-slate-50 border border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl outline-none font-bold text-slate-700 transition-all text-sm"
-                  placeholder="Ej: PRODUCTO-01"
-                />
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Etiqueta</label>
+                <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} className="w-full h-12 px-5 bg-slate-50 border border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl outline-none font-bold text-slate-700 text-sm" />
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center px-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Contenido ({targetLength} Digs)</label>
-                <button 
-                  onClick={() => setIsAutoFixing(!isAutoFixing)}
-                  className="flex items-center gap-2 group"
-                >
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Auto-Check</span>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Código ({targetLength} Digs)</label>
+                <button onClick={() => setIsAutoFixing(!isAutoFixing)} className="flex items-center gap-2 group">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Auto-Corrección</span>
                   <div className={`w-8 h-4 rounded-full relative transition-all ${isAutoFixing ? 'bg-indigo-600' : 'bg-slate-300'}`}>
                     <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${isAutoFixing ? 'right-0.5' : 'left-0.5'}`} />
                   </div>
@@ -231,27 +259,14 @@ const App: React.FC = () => {
               </div>
               
               <div className="relative flex items-center">
-                <input 
-                  type="text" 
-                  value={inputValue} 
-                  onChange={handleInputChange}
-                  className={`w-full h-20 px-8 bg-slate-50 border-2 rounded-3xl font-mono text-3xl focus:bg-white outline-none transition-all tracking-[0.2em] ${
-                    isValid ? 'border-green-100 text-slate-900' : 'border-amber-100 text-amber-700'
-                  }`}
-                />
+                <input type="text" value={inputValue} onChange={handleInputChange} className={`w-full h-20 px-8 bg-slate-50 border-2 rounded-3xl font-mono text-3xl focus:bg-white outline-none transition-all tracking-[0.2em] ${isValid ? 'border-green-100 text-slate-900' : 'border-amber-100 text-amber-700'}`} />
                 <div className="absolute right-4 flex items-center gap-2">
                   {isValid ? (
-                    <div className="bg-green-500 p-2.5 rounded-full text-white shadow-md shadow-green-100">
-                      <CheckCircle2 size={20} />
-                    </div>
+                    <div className="bg-green-500 p-2.5 rounded-full text-white shadow-md shadow-green-100"><CheckCircle2 size={20} /></div>
                   ) : (
                     inputValue.length >= targetLength - 1 && (
-                      <button 
-                        onClick={forceFix} 
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95"
-                      >
-                        <RefreshCw size={14} />
-                        <span className="text-[8px] uppercase">Corregir</span>
+                      <button onClick={forceFix} className="bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95">
+                        <RefreshCw size={14} /> <span className="text-[8px] uppercase">Corregir</span>
                       </button>
                     )
                   )}
@@ -261,14 +276,8 @@ const App: React.FC = () => {
 
             <BarcodeDisplay value={inputValue} format={format} height={120} />
 
-            <button 
-              disabled={!isValid}
-              onClick={downloadBarcode}
-              className={`w-full h-16 font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg ${
-                isValid ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-              }`}
-            >
-              <Download size={20}/> GUARDAR PNG
+            <button disabled={!isValid} onClick={downloadBarcode} className={`w-full h-16 font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg ${isValid ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+              <Download size={20}/> GUARDAR ETIQUETA
             </button>
           </div>
         </div>
