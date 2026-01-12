@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallHelp, setShowInstallHelp] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
-  const [appVersion] = useState<string>("2.5.1");
+  const [appVersion] = useState<string>("2.7.1");
 
   useEffect(() => {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -107,7 +107,6 @@ const App: React.FC = () => {
   const handleDeepReset = async () => {
     setIsReloading(true);
     try {
-      // 1. Unregister all service workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const reg of registrations) {
@@ -115,7 +114,6 @@ const App: React.FC = () => {
         }
       }
 
-      // 2. Clear all caches
       if ('caches' in window) {
         const keys = await caches.keys();
         for (const key of keys) {
@@ -123,17 +121,15 @@ const App: React.FC = () => {
         }
       }
 
-      // 3. Clear storage
       localStorage.clear();
       sessionStorage.clear();
 
-      // 4. Force reload con cache-buster para engañar al navegador
       setTimeout(() => {
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.location.href = `${cleanUrl}?v=${Date.now()}`;
-      }, 1200);
+        // Forma segura de recargar ignorando errores de origen
+        const currentUrl = window.location.href.split('?')[0];
+        window.location.href = `${currentUrl}?reload=${Date.now()}`;
+      }, 1000);
     } catch (err) {
-      console.error("Error during reset:", err);
       window.location.reload();
     }
   };
@@ -217,7 +213,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">VERSIÓN {appVersion}</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">ULTRA V{appVersion}</p>
               </div>
             </div>
           </div>
@@ -235,8 +231,8 @@ const App: React.FC = () => {
             <button 
               onClick={handleDeepReset} 
               disabled={isReloading} 
-              className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-100'}`}
-              title="Borra caché y soluciona errores 404"
+              className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+              title="Borra caché y soluciona errores"
             >
               {isReloading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} 
               {isReloading ? 'REPARANDO...' : 'REPARAR 404'}
@@ -253,7 +249,7 @@ const App: React.FC = () => {
               <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Servicio de Logística</h2>
             </div>
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-lg border border-slate-100">
-              BUILD {appVersion}
+              SMOOTH BUILD
             </div>
           </div>
 
