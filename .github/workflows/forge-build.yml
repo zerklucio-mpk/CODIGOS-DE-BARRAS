@@ -1,5 +1,5 @@
-# APK FORGE V3.2 - TITANIUM STABILITY FIX
-name: APK Forge V3.2 (Syntax Fix)
+# APK FORGE V3.3 - IRONCLAD INJECTION FIX
+name: APK Forge V3.3 (Sed Fix)
 on:
   workflow_dispatch:
   push:
@@ -49,26 +49,30 @@ jobs:
 
       - name: 🛠️ Path Repair (Anti-White Screen)
         run: |
-          # Fix absolute paths to relative paths to prevent White Screen on Android WebView
+          # Fix absolute paths using '|' as delimiter to avoid conflicts with '/'
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.js" -exec sed -i 's|"/assets/|"./assets/|g' {} +
 
       - name: 📱 Capacitor Initialization
         run: |
-          # Syntax Fix: removed extra 'env.' and corrected variable reference
-          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v32" --web-dir ${{ env.BUILD_DIR }}
+          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v33" --web-dir ${{ env.BUILD_DIR }}
           npx cap add android
 
       - name: 🛡️ Hardware Permission Injection
         run: |
-          # Patch Kotlin version to ensure Gradle stability
-          echo "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }" >> android/build.gradle
+          # Robust Kotlin patch
+          printf "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }
+" >> android/build.gradle
           
-          # Inject Camera and Flashlight permissions for barcode scanning
-          sed -i '/</manifest>/i     <uses-permission android:name="android.permission.CAMERA" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/</manifest>/i     <uses-permission android:name="android.permission.FLASHLIGHT" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/a     android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
+          # Using substitution 's' and delimiter '|' is safer than 'i' command for XML
+          # This inserts permissions before the closing </manifest> tag
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+</manifest>|' android/app/src/main/AndroidManifest.xml
+          
+          # Enable cleartext traffic for local testing/debugging
+          sed -i 's|<application|<application android:usesCleartextTraffic="true"|' android/app/src/main/AndroidManifest.xml
 
       - name: 🔄 Sync Assets
         run: npx cap sync android
@@ -82,5 +86,5 @@ jobs:
       - name: 📦 Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: Barcode-Master-Pro-V32-Fixed
+          name: Barcode-Master-Pro-V33-Final
           path: android/app/build/outputs/apk/debug/app-debug.apk
