@@ -11,7 +11,8 @@ import {
   HelpCircle,
   X,
   Share,
-  Smartphone
+  Smartphone,
+  Trash2
 } from 'lucide-react';
 import { BarcodeDisplay } from './components/BarcodeDisplay';
 
@@ -104,17 +105,29 @@ const App: React.FC = () => {
     }
   };
 
-  const handleHardReload = () => {
+  const handleDeepReset = async () => {
     setIsReloading(true);
+    
+    // 1. Unregister all service workers
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for(let registration of registrations) registration.unregister();
-      });
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
     }
+
+    // 2. Clear all caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        await caches.delete(key);
+      }
+    }
+
+    // 3. Force reload ignoring cache
     setTimeout(() => {
-      const currentUrl = window.location.href.split('?')[0];
-      window.location.href = `${currentUrl}?t=${Date.now()}`;
-    }, 800);
+      window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+    }, 1000);
   };
 
   const downloadBarcode = () => {
@@ -153,7 +166,7 @@ const App: React.FC = () => {
           <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-300">
             <div className="p-8">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-black uppercase text-sm tracking-widest text-slate-400">Instrucciones de Instalación</h3>
+                <h3 className="font-black uppercase text-sm tracking-widest text-slate-400">Guía de Instalación</h3>
                 <button onClick={() => setShowInstallHelp(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <X size={20} className="text-slate-400" />
                 </button>
@@ -196,7 +209,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black tracking-tight uppercase leading-none text-slate-900">CV DIRECTO</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <ShieldCheck size={10} className="text-green-500" />
-                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">SISTEMA REPARADO v2.3</p>
+                <p className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">VERSIÓN ESTABLE v2.4</p>
               </div>
             </div>
           </div>
@@ -211,8 +224,8 @@ const App: React.FC = () => {
                 <HelpCircle size={12} /> Ayuda
               </button>
             )}
-            <button onClick={handleHardReload} disabled={isReloading} className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-indigo-50 text-indigo-700 border-indigo-100'}`}>
-              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />} {isReloading ? '...' : 'Reparar'}
+            <button onClick={handleDeepReset} disabled={isReloading} className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 ${isReloading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
+              {isReloading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} {isReloading ? 'REPARANDO...' : 'REPARAR 404'}
             </button>
           </div>
         </div>
@@ -223,7 +236,7 @@ const App: React.FC = () => {
           <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Servidor Offline Activo</h2>
+              <h2 className="font-bold text-slate-700 uppercase text-[9px] tracking-widest">Servicio de Logística</h2>
             </div>
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-lg border border-slate-100">
               BUILD {appVersion}
@@ -233,7 +246,7 @@ const App: React.FC = () => {
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Dígitos</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Estándar</label>
                 <div className="flex p-1 bg-slate-100 rounded-xl gap-1">
                   {[10, 11, 12, 13].map((len) => (
                     <button key={len} onClick={() => setTargetLength(len)} className={`flex-1 py-2.5 rounded-lg font-black text-[11px] transition-all ${targetLength === len ? 'bg-white shadow-sm text-indigo-600' : 'bg-transparent text-slate-500'}`}>{len}</button>
@@ -241,7 +254,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Etiqueta</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Producto</label>
                 <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} className="w-full h-12 px-5 bg-slate-50 border border-slate-100 focus:border-indigo-500 focus:bg-white rounded-xl outline-none font-bold text-slate-700 text-sm" />
               </div>
             </div>
@@ -250,7 +263,7 @@ const App: React.FC = () => {
               <div className="flex justify-between items-center px-1">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Código ({targetLength} Digs)</label>
                 <button onClick={() => setIsAutoFixing(!isAutoFixing)} className="flex items-center gap-2 group">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Auto-Corrección</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Check Digit</span>
                   <div className={`w-8 h-4 rounded-full relative transition-all ${isAutoFixing ? 'bg-indigo-600' : 'bg-slate-300'}`}>
                     <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${isAutoFixing ? 'right-0.5' : 'left-0.5'}`} />
                   </div>
@@ -276,7 +289,7 @@ const App: React.FC = () => {
             <BarcodeDisplay value={inputValue} format={format} height={120} />
 
             <button disabled={!isValid} onClick={downloadBarcode} className={`w-full h-16 font-black rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg ${isValid ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-              <Download size={20}/> GUARDAR ETIQUETA
+              <Download size={20}/> DESCARGAR PNG
             </button>
           </div>
         </div>
