@@ -1,0 +1,48 @@
+name: APK Forge Elite Engine
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-android:
+    name: Forjar Binario APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Clonando Repositorio
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Preparando Entorno Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🛡️ Escudo Anti-Errores (Auto-Config)
+        run: |
+          echo "Iniciando análisis de estructura..."
+          if [ ! -f package.json ]; then
+            echo '{"name":"auto-gen-app","scripts":{"build":"mkdir -p dist && echo "<h1>App Generada Correctamente</h2>" > dist/index.html"}}' > package.json
+            echo "⚠️ No se detectó package.json. Se ha generado uno de emergencia."
+          fi
+          mkdir -p dist
+          if [ ! -f dist/index.html ]; then
+            echo "<html><body style='background:#0f172a;color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>Bar Code</h1><p>Construida con APK Forge Elite</p></body></html>" > dist/index.html
+            echo "⚠️ No se detectó index.html. Se ha generado una interfaz base."
+          fi
+
+      - name: 🏗️ Instalando Motores de Aplicación
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Bar Code" "com.forge.elite.app" --web-dir dist || true
+          npx cap add android || true
+
+      - name: 🚀 Construyendo APK (Gradle)
+        run: |
+          npx cap copy android
+          cd android && ./gradlew assembleDebug
+
+      - name: 📦 Entrega de Artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bar-Code-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
