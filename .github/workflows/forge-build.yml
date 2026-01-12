@@ -1,5 +1,5 @@
-# APK FORGE V3.3 - IRONCLAD INJECTION FIX
-name: APK Forge V3.3 (Sed Fix)
+# APK FORGE V3.4 - QUANTUM SHIELD
+name: APK Forge V3.4 (Quantum Stability)
 on:
   workflow_dispatch:
   push:
@@ -30,48 +30,50 @@ jobs:
           npm install --legacy-peer-deps
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: 🚀 Project Build (Compiling React/Vite)
+      - name: 🚀 Project Build
         run: |
-          # Try to build, if it fails we assume static site
-          npm run build || echo "No build script found"
-          
-          # Intelligent directory detection
+          npm run build || echo "Static site detected"
           if [ -d "dist" ]; then
             echo "BUILD_DIR=dist" >> $GITHUB_ENV
-            echo "Found dist/ directory"
           elif [ -d "build" ]; then
             echo "BUILD_DIR=build" >> $GITHUB_ENV
-            echo "Found build/ directory"
           else
             echo "BUILD_DIR=." >> $GITHUB_ENV
-            echo "Using root as web-dir"
           fi
 
       - name: 🛠️ Path Repair (Anti-White Screen)
         run: |
-          # Fix absolute paths using '|' as delimiter to avoid conflicts with '/'
+          # Usando delimitadores alternativos para evitar conflictos con rutas
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.js" -exec sed -i 's|"/assets/|"./assets/|g' {} +
 
       - name: 📱 Capacitor Initialization
         run: |
-          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v33" --web-dir ${{ env.BUILD_DIR }}
+          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v34" --web-dir ${{ env.BUILD_DIR }}
           npx cap add android
 
-      - name: 🛡️ Hardware Permission Injection
+      - name: 🛡️ Quantum Injection (Gradle & Manifest)
         run: |
-          # Robust Kotlin patch
-          printf "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }
-" >> android/build.gradle
+          # Parche de Kotlin usando Heredoc (Cero errores de sintaxis)
+          cat <<EOF >> android/build.gradle
+          subprojects {
+              configurations.all {
+                  resolutionStrategy.eachDependency { details ->
+                      if (details.requested.group == 'org.jetbrains.kotlin') {
+                          details.useVersion '1.8.22'
+                      }
+                  }
+              }
+          }
+          EOF
           
-          # Using substitution 's' and delimiter '|' is safer than 'i' command for XML
-          # This inserts permissions before the closing </manifest> tag
+          # Inyección de permisos limpia mediante sustitución simple
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
 </manifest>|' android/app/src/main/AndroidManifest.xml
           
-          # Enable cleartext traffic for local testing/debugging
+          # Habilitar tráfico HTTP para debug
           sed -i 's|<application|<application android:usesCleartextTraffic="true"|' android/app/src/main/AndroidManifest.xml
 
       - name: 🔄 Sync Assets
@@ -83,8 +85,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Upload Final APK
+      - name: 📦 Final Delivery
         uses: actions/upload-artifact@v4
         with:
-          name: Barcode-Master-Pro-V33-Final
+          name: Barcode-Master-Pro-V34-Quantum
           path: android/app/build/outputs/apk/debug/app-debug.apk
