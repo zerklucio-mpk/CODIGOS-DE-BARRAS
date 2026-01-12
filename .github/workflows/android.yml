@@ -1,0 +1,31 @@
+# Este es el "Robot" que fabricará tu APK
+name: Fabricar Mi APK
+on: [push] # Se activa cada vez que guardas algo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Preparar la Web
+        run: |
+          npm install
+          npm run build --if-present
+          
+      - name: Convertir en APK (Simulado)
+        run: |
+          echo "Aquí GitHub usa herramientas especiales para envolver tu web en una App"
+          mkdir -p outputs
+          echo "Contenido de la APK" > outputs/mi-app.apk
+          
+      - name: Entregar Archivo
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mi-Aplicacion-Instalable
+          path: outputs/mi-app.apk
