@@ -1,5 +1,5 @@
-# APK FORGE V3.4 - QUANTUM SHIELD
-name: APK Forge V3.4 (Quantum Stability)
+# APK FORGE V3.5 - SUPERNOVA STABILITY
+name: APK Forge V3.5 (Supernova Fix)
 on:
   workflow_dispatch:
   push:
@@ -30,9 +30,12 @@ jobs:
           npm install --legacy-peer-deps
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: 🚀 Project Build
+      - name: 🚀 Project Build (Compiling)
         run: |
-          npm run build || echo "Static site detected"
+          # Try to build, skip if not applicable
+          npm run build || echo "Build script not found, proceeding as static"
+          
+          # Detect output directory
           if [ -d "dist" ]; then
             echo "BUILD_DIR=dist" >> $GITHUB_ENV
           elif [ -d "build" ]; then
@@ -41,42 +44,34 @@ jobs:
             echo "BUILD_DIR=." >> $GITHUB_ENV
           fi
 
-      - name: 🛠️ Path Repair (Anti-White Screen)
+      - name: 🛠️ White Screen Fix (Subpath Patch)
         run: |
-          # Usando delimitadores alternativos para evitar conflictos con rutas
+          # Crucial for GitHub Pages: convert absolute paths to relative
+          # This works for URLs like https://user.github.io/repo/
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
+          find ${{ env.BUILD_DIR }} -name "*.html" -exec sed -i 's|<base href="[^"]*">|<base href="./">|g' {} +
           find ${{ env.BUILD_DIR }} -name "*.js" -exec sed -i 's|"/assets/|"./assets/|g' {} +
 
-      - name: 📱 Capacitor Initialization
+      - name: 📱 Capacitor Init
         run: |
-          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v34" --web-dir ${{ env.BUILD_DIR }}
+          npx cap init "Barcode Master Pro" "com.zerklucio.barcode.v35" --web-dir ${{ env.BUILD_DIR }}
           npx cap add android
 
-      - name: 🛡️ Quantum Injection (Gradle & Manifest)
+      - name: 🛡️ Security & Stability Injection
         run: |
-          # Parche de Kotlin usando Heredoc (Cero errores de sintaxis)
-          cat <<EOF >> android/build.gradle
-          subprojects {
-              configurations.all {
-                  resolutionStrategy.eachDependency { details ->
-                      if (details.requested.group == 'org.jetbrains.kotlin') {
-                          details.useVersion '1.8.22'
-                      }
-                  }
-              }
-          }
-          EOF
+          # Gradle Patch using echo (100% YAML safe, replacing line 66 problematic block)
+          echo "subprojects { configurations.all { resolutionStrategy.eachDependency { details -> if (details.requested.group == 'org.jetbrains.kotlin') { details.useVersion '1.8.22' } } } }" >> android/build.gradle
           
-          # Inyección de permisos limpia mediante sustitución simple
+          # Manifest Injection: Adding Camera and Flashlight permissions safely
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
 </manifest>|' android/app/src/main/AndroidManifest.xml
           
-          # Habilitar tráfico HTTP para debug
+          # Enable Cleartext Traffic
           sed -i 's|<application|<application android:usesCleartextTraffic="true"|' android/app/src/main/AndroidManifest.xml
 
-      - name: 🔄 Sync Assets
+      - name: 🔄 Sync Capacitor
         run: npx cap sync android
 
       - name: 🏗️ Build APK Binary
@@ -85,8 +80,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: 📦 Final Delivery
+      - name: 📦 Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Barcode-Master-Pro-V34-Quantum
+          name: Barcode-Master-Pro-V35-Fixed
           path: android/app/build/outputs/apk/debug/app-debug.apk
