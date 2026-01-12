@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-android:
-    name: Forjar Binario APK (Java 21 Core)
+    name: Forjar Binario APK (V2.4 Cache-Bypass)
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Clonando Repositorio
@@ -17,38 +17,38 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'
+          # Eliminamos 'cache: gradle' porque los archivos no existen al inicio
 
       - name: 🛠️ Preparando Entorno Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # Eliminamos 'cache: npm' para evitar errores de búsqueda de archivos
 
-      - name: 🧹 Limpieza de Seguridad y Estructura
+      - name: 🧹 Limpieza y Preparación
         run: |
-          echo "Borrando residuos de compilaciones fallidas..."
+          echo "Borrando rastro de compilaciones anteriores..."
           rm -rf android
           if [ ! -f package.json ]; then
             echo '{"name":"auto-app","scripts":{"build":"mkdir -p dist && echo "<h1>App</h2>" > dist/index.html"}}' > package.json
           fi
           mkdir -p dist
           if [ ! -f dist/index.html ]; then
-            echo "<html><body style='background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>BarCode</h1><p>Motor de Construcción V2.3</p></body></html>" > dist/index.html
+            echo "<html><body style='background:#020617;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif'><h1>BarCode</h1><p>V2.4 Bypass System</p></body></html>" > dist/index.html
           fi
 
-      - name: 🏗️ Instalando Motores (Capacitor 6/7 Ready)
+      - name: 🏗️ Instalando Motores (Capacitor)
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "BarCode" "com.forge.elite.app" --web-dir dist || true
           npx cap add android || true
 
-      - name: 🚀 Sincronización y Permisos de Ejecución
+      - name: 🚀 Sincronización y Permisos
         run: |
           npx cap sync android
           chmod +x android/gradlew
 
-      - name: 🛠️ Construyendo APK (Gradle con Java 21)
+      - name: 🛠️ Construyendo APK
         run: |
           cd android
           ./gradlew assembleDebug --no-daemon
@@ -56,5 +56,5 @@ jobs:
       - name: 📦 Entrega de Artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: BarCode-APK-V23
+          name: BarCode-APK-V24
           path: android/app/build/outputs/apk/debug/app-debug.apk
