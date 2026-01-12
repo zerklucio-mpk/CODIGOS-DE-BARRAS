@@ -1,9 +1,9 @@
 {
-  "id": "com.cvdirecto.barcode.v1.2",
+  "id": "com.cvdirecto.barcode.v2.5",
   "name": "CV Directo Barcode Pro",
   "short_name": "CV Barcode",
   "description": "Generador profesional de códigos de barras EAN-13 para logística.",
-  "start_url": "index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
